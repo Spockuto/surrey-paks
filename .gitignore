@@ -1,0 +1,14 @@
+paks/node_modules/
+paks-auxillary/node_modules/
+paks/.gitignore
+paks-auxillary/.gitignore
+paks/package-lock.json
+paks-auxillary/package-lock.json
+paks/log.txt
+paks-auxillary/log.txt
+paks/routes/uploads/*
+paks-auxillary/routes/uploads/*
+paks/.git/
+paks-auxillary/.git/
+!*.keep
+

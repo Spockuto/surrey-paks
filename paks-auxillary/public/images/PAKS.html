@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<!-- saved from url=(0022)http://localhost:3000/ -->
+<html class="gr__localhost"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<title>PAKS</title>
+	<link rel="stylesheet" href="./PAKS_files/bootstrap.css">
+	<link rel="stylesheet" href="./PAKS_files/style.css">
+</head>
+<body data-gr-c-s-loaded="true">
+	<div class="container" style="width: 100%">
+      <div class="header clearfix">
+        <nav>
+          <ul class="nav nav-pills pull-right">
+              <li role="presentation"><a href="http://localhost:3000/">Dashboard</a></li>
+              <li role="presentation"><a href="http://localhost:3000/users/register">Register</a></li>
+              <li role="presentation"><a href="http://localhost:3000/users/change">Change Password</a></li>
+          </ul>
+        </nav>
+        <img style="height: 50px; width: 50px;" src="./PAKS_files/logo.png">
+        <h3 style="display: inline-block;" class="text-muted">Password Authenticated Keyword Search</h3>
+      </div>
+
+
+      <div class="row">
+        <div class="col-lg-12 col-md-12">
+            <div id="success" class="alert alert-success" style="display: none;"></div>
+            <div id="danger" class="alert alert-danger" style="display: none;"></div>
+          <div class="row">
+  <div class="col-md-6">
+  Password Authenticated Keyword Search
+  </div>
+  <div class="col-md-6">
+    <div class="form-group">
+        <label>Email</label>
+        <input id="email" type="text" class="form-control" name="email" placeholder="text">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input id="password" type="password" class="form-control" name="password" placeholder="Password">
+      </div>
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-6">
+  <h2 class="page-header">Outsource</h2>
+    <form method="post" id="outsource">
+      <div class="form-group">
+        <label>Files</label>
+        <input id="upload-input" type="file" name="uploads[]" multiple="multiple">
+      </div>
+      <div class="form-group">
+        <label for="comment">Associated Text</label>
+        <textarea id="data" class="form-control" rows="5" name="data"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Tag</label>
+        <input id="tag" type="text" class="form-control" name="tag" placeholder="text">
+      </div>
+      <img id="image1" src="./PAKS_files/ajax-loader.gif" style="display: none;">
+      <button type="submit" class="btn btn-default">Submit</button>
+    </form>
+  </div>
+  
+  <div class="col-md-6">
+    <h2 class="page-header">Retrieve</h2>
+    <p> Data </p>
+    <div id="dataout" class="alert alert-success" style="display: none;">
+    <table class="table table-hover" id="databody">
+    <thead>
+      <tr>
+        <th>Keyword(s)</th>
+        <th>Data</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+    </div>
+    <form method="post" id="retrieve">
+      <div class="form-group">
+        <label>Tag</label>
+        <input id="tag1" type="text" class="form-control" name="tag" placeholder="text">
+      </div>
+      <img id="image2" src="./PAKS_files/ajax-loader.gif" style="display: none;">
+      <button type="submit" class="btn btn-default">Submit</button>
+    </form>
+  </div>
+</div>
+
+
+
+        </div>
+      </div>
+    </div> <!-- /container -->
+
+<script src="./PAKS_files/jquery-3.2.1.min.js"></script>
+<script src="./PAKS_files/main.js"></script>
+<script src="./PAKS_files/ecc.min.js"></script>
+<script src="./PAKS_files/crypto.js"></script>
+
+</body></html>
