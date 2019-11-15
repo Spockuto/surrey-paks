@@ -133,6 +133,11 @@ function outsourced(data){
 			ixs.forEach(function(ix){
 				var t1 = performance.now();
 
+				/*Addition for file Encryption*/
+				if(ix.indexOf(email) == 0){
+					var r_fid =
+				}
+				
 				var mku = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + email + "0" , email);
 				var sk0 = ecc.sjcl.misc.cachedPbkdf2(ecc.sjcl.codec.hex.fromBits(mk0) + A.x.toLocaleString() + Y.x.toLocaleString() + "2");
 				var sk1 = ecc.sjcl.misc.cachedPbkdf2(ecc.sjcl.codec.hex.fromBits(mk1) + A.x.toLocaleString() + Y.x.toLocaleString() + "2");
@@ -317,4 +322,72 @@ function reset(data){
 	else{
 		return {result : "Tag 2 Verify Failed"};
 	}
+}
+
+function convertStringToArrayBufferView(str) {
+    var bytes = new Uint8Array(str.length);
+    for (var i = 0; i < str.length; i++) {
+        bytes[i] = str.charCodeAt(i);
+    }
+    return bytes;
+}
+
+function appendArray(buffer1, buffer2) {
+  
+  var tmp = new Uint8Array(buffer1.length + buffer2.length);
+  tmp.set(new Uint8Array(buffer1), 0);
+  tmp.set(new Uint8Array(buffer2), buffer1.length);
+  return tmp;
+
+};
+/*
+File Encryption requires three parameters
+	file : The bit string
+	password : key derived
+	iv string : r_fid
+*/
+
+function encryptFile(file, password){
+   	var encrypted_data = ""; 
+
+	return crypto.subtle.digest(
+   		{
+   			name: "SHA-256"
+   		}, 
+   		convertStringToArrayBufferView(password)
+   	)
+   	.then(function(result){
+		return window.crypto.subtle.importKey(
+			"raw", 
+			result, 
+			{
+				name: "AES-CBC"
+			}, 
+			false, 
+			["encrypt", "decrypt"]
+		)
+		.then(function(key){
+			return crypto.subtle.encrypt(
+				{
+					name: "AES-CBC", 
+					iv: iv
+				}, 
+				key, 
+				file
+			)
+			.then(function(result){
+				encrypted_data = new Uint8Array(result);
+				return encrypted_data;
+			})
+			.catch(function(e){
+				console.log(e);
+			});
+    	})
+    	.catch(function(e){
+    		console.log(e);
+    	});
+    })
+    .catch(function(e){
+    	console.log(e);
+    });
 }

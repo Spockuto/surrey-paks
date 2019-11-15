@@ -402,7 +402,10 @@ router.post('/upload', function(req, res){
   form.multiples = true;
   form.uploadDir = path.join(__dirname, '/uploads');
   form.on('file', function(field, file) {
-    fs.rename(file.path, path.join(form.uploadDir, file.name));
+    fs.rename(file.path, path.join(form.uploadDir, file.name), function(err, result){
+		if(err)
+			console.log(err);
+	});
   });
   form.on('error', function(err) {
     console.log('An error has occured: \n' + err);

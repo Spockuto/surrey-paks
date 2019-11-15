@@ -651,7 +651,7 @@ $("#outsource").submit(function (e) {
                     data.push(email + "," + window.files[i].name)
                     FileData.append('file', window.files[i], window.files[i].name);
                 }
-                //console.log(data);
+                console.log(data);
                 formData = new Object();
                 formData.email = $("#email").val();
                 formData.a = state.A;
