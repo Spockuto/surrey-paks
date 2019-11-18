@@ -1005,7 +1005,7 @@ $("#retrieve").submit(function (e) {
                                 else{
                                     finaldata[name] = [tags];
                                     finaldata[name].lengths = 1;
-                                    finaldata[name].data = "<a href='' onclick='retrieveFileArray('" + name + "','" + file_name + "','" + email + "','"  + result.k + "');return false;'>" + file_name.substring(0,15) + ".." + re.exec(file_name)[1] + "</a>";
+                                    finaldata[name].data = "<a href='' onclick=\"retrieveFileArray('" + name + "','" + file_name + "','" + email + "','"  + result.k + "');return false;\">" + file_name.substring(0,15) + ".." + re.exec(file_name)[1] + "</a>";
                                 }
                             }
                             else{
