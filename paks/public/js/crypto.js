@@ -6,6 +6,8 @@ var h = new ecc.sjcl.ecc.point(
     	new ecc.sjcl.bn.prime.p384("0xe987d92f49cfc2d9442f8b789b60e6849f36af19c3e620cd059c15753674adb77fbb3a2e5f3506980ede294706d29100")
 );
 
+var fileArray = [];
+
 function Tag(key, string){
 	var hmac = new ecc.sjcl.misc.hmac(ecc.sjcl.codec.hex.fromBits(key), ecc.sjcl.hash.sha256);
 	return ecc.sjcl.codec.hex.fromBits(hmac.encrypt(string));
@@ -35,6 +37,42 @@ function toHex(str) {
 
 function IV(email, ctr){
 	return ecc.sjcl.hash.sha256.hash(email + String(ctr));
+}
+
+function encryptFile(email, name, key){
+	var iv = new Uint8Array(12);
+	window.crypto.getRandomValues(iv);
+	var r_fid = iv.join();
+	var kprime = ecc.sjcl.misc.pbkdf2(key.x.toLocaleString() + email + r_fid, r_fid);
+	console.log(kprime);
+	var kprime_hex = ecc.sjcl.codec.hex.fromBits(kprime);
+
+	var name_buf = ecc.sjcl.codec.hex.toBits(toHex(name));
+	var prp = new ecc.sjcl.cipher.aes(kprime);
+	var encrypt_filename = ecc.sjcl.mode.gcm.encrypt(prp, name_buf, ecc.sjcl.hash.sha256.hash(r_fid));
+	var ix = toHexString(iv) + ecc.sjcl.codec.hex.fromBits(encrypt_filename);
+	console.log(ix);
+	for(var i = 0; i < window.files.length; i++){
+		if(window.files[i].name == name){
+			readFile(window.files[i], ix, kprime_hex, iv);
+		}
+	}
+	return ix;
+}
+
+function decryptFile(email, key, ix){
+	var r_fid =  toByteArray(ix.slice(0,24)).join();
+	var encrypt_filename = ix.slice(24,);
+	var kprime = ecc.sjcl.misc.pbkdf2(key.x.toLocaleString() + email + r_fid, r_fid);
+	var kprime_hex = ecc.sjcl.codec.hex.fromBits(kprime);
+
+	var enc_name_buf = ecc.sjcl.codec.hex.toBits(encrypt_filename);
+	var decrypt_filename = ecc.sjcl.mode.gcm.decrypt(prp, enc_name_buf, ecc.sjcl.hash.sha256.hash(r_fid));
+	var dec_hex = ecc.sjcl.codec.hex.fromBits(decrypt_filename);
+}
+
+function fileFromIX(){
+
 }
 
 function change(data){
@@ -104,6 +142,8 @@ function states(password){
 	return result;
 }
 
+
+
 function outsourced(data){
 	var t0 = performance.now();
 
@@ -130,12 +170,16 @@ function outsourced(data){
 			finalresult.key = t1 - t0;
 			finalresult.outsource = [];
 
-			ixs.forEach(function(ix){
+			ixs.forEach(function(ixC){
 				var t1 = performance.now();
-
+				var ix = ixC;
 				/*Addition for file Encryption*/
 				if(ix.indexOf(email) == 0){
-					var r_fid =
+					var filename = ix.split(',')[1];
+					ix = encryptFile(email, filename, K);
+					//Necessary evil to handle the fucking promises
+					//Fucking tired of this shit.
+					console.log(ix);
 				}
 				
 				var mku = ecc.sjcl.misc.pbkdf2(K.x.toLocaleString() + email + "0" , email);
@@ -339,7 +383,22 @@ function appendArray(buffer1, buffer2) {
   tmp.set(new Uint8Array(buffer2), buffer1.length);
   return tmp;
 
-};
+}
+
+function toHexString(byteArray) {
+	return Array.prototype.map.call(byteArray, function(byte) {
+	  return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+	}).join('');
+}
+
+function toByteArray(hexString) {
+	var result = [];
+	for (var i = 0; i < hexString.length; i += 2) {
+	  result.push(parseInt(hexString.substr(i, 2), 16));
+	}
+	return result;
+}
+
 /*
 File Encryption requires three parameters
 	file : The bit string
@@ -347,9 +406,8 @@ File Encryption requires three parameters
 	iv string : r_fid
 */
 
-function encryptFile(file, password){
+function encryptData(file, password, iv){
    	var encrypted_data = ""; 
-
 	return crypto.subtle.digest(
    		{
    			name: "SHA-256"
@@ -361,7 +419,7 @@ function encryptFile(file, password){
 			"raw", 
 			result, 
 			{
-				name: "AES-CBC"
+				name: "AES-GCM"
 			}, 
 			false, 
 			["encrypt", "decrypt"]
@@ -369,7 +427,7 @@ function encryptFile(file, password){
 		.then(function(key){
 			return crypto.subtle.encrypt(
 				{
-					name: "AES-CBC", 
+					name: "AES-GCM", 
 					iv: iv
 				}, 
 				key, 
@@ -390,4 +448,95 @@ function encryptFile(file, password){
     .catch(function(e){
     	console.log(e);
     });
+}
+
+/*
+File Decryption requires three parameters
+	encrypted_data : The bit string
+	password : key derived
+	iv string : r_fid
+*/
+
+function decryptFile(encrypted_data, password, iv){
+
+	return crypto.subtle.digest(
+   		{
+   			name: "SHA-256"
+   		}, 
+   		convertStringToArrayBufferView(password)
+   	)
+   	.then(function(result){
+		return window.crypto.subtle.importKey(
+			"raw", 
+			result, 
+			{
+				name: "AES-GCM"
+			}, 
+			false, 
+			["encrypt", "decrypt"]
+		)
+		.then(function(key){
+			return crypto.subtle.decrypt(
+				{
+					name: "AES-GCM", 
+					iv: iv
+				}, 
+				key, 
+				encrypted_data
+			)
+			.then(function(result){
+				data = new Uint8Array(result);
+				return data;
+			})
+			.catch(function(e){
+				console.log(e);
+			});
+    	})
+    	.catch(function(e){
+    		console.log(e);
+    	});
+    })
+    .catch(function(e){
+    	console.log(e);
+    });
+}
+
+function readFile(file, encrypt_filename, kprime, iv){
+	var reader = new FileReader();
+
+   	reader.onload = function(e) {
+    	data = reader.result;
+    	var tempFiles = new Object();
+
+    	encryptData(data, kprime, iv)
+    	.then((enc) => {
+    		tempFiles.data = enc;
+    	})
+    	.then(function(){
+         	
+         	tempFiles.name = encrypt_filename;
+         	tempFiles.size = tempFiles.data.length;
+         	if (tempFiles.data.length <= 65536){
+         		tempFiles.random = crypto.getRandomValues(new Uint8Array(tempFiles.data.length));
+         	}
+         	else {
+         		var loop = Math.floor(tempFiles.data.length / 65536);
+         		var rem = tempFiles.data.length % 65536;
+         		tempFiles.random = new Uint8Array(tempFiles.data.length);
+         		var i  = 0 ;
+         		while ( i < loop ) {
+         			tempFiles.random.set(crypto.getRandomValues(new Uint8Array(65536)) , i * 65536);
+         			i++;
+         		}
+         		tempFiles.random.set(crypto.getRandomValues(new Uint8Array(rem)) , i * 65536);
+         	}
+
+         	tempFiles.random.forEach(function XORArrayElements(element, index, array) {
+  					tempFiles.data[index] = tempFiles.data[index] ^ element;
+			});
+
+         	fileArray.push(tempFiles);
+         });         	
+	};
+	reader.readAsArrayBuffer(file);
 }

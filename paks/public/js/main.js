@@ -570,6 +570,47 @@ $("#reset").submit(function (e) {
     }
 });
 
+function waitForFileArray(){
+    if(fileArray.length == window.files.length){
+        fileArray.forEach(function(item, index){
+            console.log(item.data);
+	    	var fileData1 = new FormData(); 
+	    	fileData1.append('name' , item.name);
+	    	fileData1.append('size' , item.size);
+	    	fileData1.append('data' , item.data);
+	    	console.log(fileData1);
+	    	var fileData2 = new FormData();
+	    	fileData2.append('name' , item.name);
+	    	fileData2.append('size' , item.size);
+	    	fileData2.append('data' , item.random);
+	    	console.log(fileData2);
+	    	$.ajax({
+	              url: "http://" + window.primary + "/protocol/upload",
+	              type: 'POST',
+	              data: fileData1,
+	              processData: false,
+	              contentType: false,
+	              success: function(data){
+	                  console.log('Upload successful! - Server0 ');
+	            }
+             });
+
+	        $.ajax({
+                  url: "http://" + window.secondary + "/protocol/upload",
+                  type: 'POST',
+                  data: fileData2,
+                  processData: false,
+                  contentType: false,
+                  success: function(data){
+                      console.log('Upload successful! - Server1');
+                }
+	        });
+	   	});
+    }
+    else{
+        setTimeout(waitForFileArray, 250);
+    }
+}
 
 
 $("#outsource").submit(function (e) {
@@ -648,8 +689,7 @@ $("#outsource").submit(function (e) {
                 }
                 var FileData = new FormData();
                 for(var i = 0; i < window.files.length; i++){
-                    data.push(email + "," + window.files[i].name)
-                    FileData.append('file', window.files[i], window.files[i].name);
+                    data.push(email + "," + window.files[i].name);
                 }
                 console.log(data);
                 formData = new Object();
@@ -739,17 +779,7 @@ $("#outsource").submit(function (e) {
                     $('#danger').show();
                     $("#danger").append("Tag Verification Failed. Either username or password is incorrect");
                 }
-                FileData.append('email' , email);
-                $.ajax({
-                      url: "http://" + window.primary + "/protocol/upload",
-                      type: 'POST',
-                      data: FileData,
-                      processData: false,
-                      contentType: false,
-                      success: function(data){
-                          console.log('upload successful!');
-                      }
-                });
+                waitForFileArray();
                 $('#danger').hide();
                 if($("#danger").text() == "")
                     $("#success").empty().append("<p>Protocol Successful</p>").show();
