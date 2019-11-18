@@ -412,9 +412,17 @@ router.post('/upload', function(req, res){
     });
 });
 
-router.get('/download', function(req, res){
-  var file = __dirname + '/uploads/'+ req.query.file;
-  res.download(file);
+router.post('/download', function(req, res){
+	var form = new formidable.IncomingForm();
+	form.parse(req, function(err, fields, files) {
+	  if (err) next(err);
+	  var uploadDir = path.join(__dirname, '/uploads/' + fields.name + '__bin' );
+	  fs.readFile(uploadDir , (err, data) => {
+		if (err) throw err;
+		var result = new Uint8Array(data.buffer);
+		res.send(result.join());
+	  });
+	});
 });
 
 router.get('/log', function(req, res){

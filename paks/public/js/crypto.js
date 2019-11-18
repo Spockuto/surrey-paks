@@ -35,6 +35,147 @@ function toHex(str) {
 	return "0x" + hex;
 }
 
+function toStr(str) {
+	var hex  = str.toString();
+	var str = '';
+	for (var n = 0; n < hex.length; n += 2) {
+		str += String.fromCharCode(parseInt(hex.substr(n, 2), 16));
+	}
+	return str;
+}
+
+function convertStringToArrayBufferView(str) {
+    var bytes = new Uint8Array(str.length);
+    for (var i = 0; i < str.length; i++) {
+        bytes[i] = str.charCodeAt(i);
+    }
+    return bytes;
+}
+
+function appendArray(buffer1, buffer2) {
+  var tmp = new Uint8Array(buffer1.length + buffer2.length);
+  tmp.set(new Uint8Array(buffer1), 0);
+  tmp.set(new Uint8Array(buffer2), buffer1.length);
+  return tmp;
+
+}
+
+function toHexString(byteArray) {
+	return Array.prototype.map.call(byteArray, function(byte) {
+	  return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+	}).join('');
+}
+
+function toByteArray(hexString) {
+	var result = [];
+	for (var i = 0; i < hexString.length; i += 2) {
+	  result.push(parseInt(hexString.substr(i, 2), 16));
+	}
+	return result;
+}
+
+/*
+File Encryption requires three parameters
+	file : The bit string
+	password : key derived
+	iv string : r_fid
+*/
+
+function encryptData(file, password, iv){
+   	var encrypted_data = ""; 
+	return crypto.subtle.digest(
+   		{
+   			name: "SHA-256"
+   		}, 
+   		convertStringToArrayBufferView(password)
+   	)
+   	.then(function(result){
+		return window.crypto.subtle.importKey(
+			"raw", 
+			result, 
+			{
+				name: "AES-GCM"
+			}, 
+			false, 
+			["encrypt", "decrypt"]
+		)
+		.then(function(key){
+			return crypto.subtle.encrypt(
+				{
+					name: "AES-GCM", 
+					iv: iv
+				}, 
+				key, 
+				file
+			)
+			.then(function(result){
+				encrypted_data = new Uint8Array(result);
+				return encrypted_data;
+			})
+			.catch(function(e){
+				console.log(e);
+			});
+    	})
+    	.catch(function(e){
+    		console.log(e);
+    	});
+    })
+    .catch(function(e){
+    	console.log(e);
+    });
+}
+
+/*
+File Decryption requires three parameters
+	encrypted_data : The bit string
+	password : key derived
+	iv string : r_fid
+*/
+
+function decryptData(encrypted_data, password, iv){
+
+	return crypto.subtle.digest(
+   		{
+   			name: "SHA-256"
+   		}, 
+   		convertStringToArrayBufferView(password)
+   	)
+   	.then(function(result){
+		return window.crypto.subtle.importKey(
+			"raw", 
+			result, 
+			{
+				name: "AES-GCM"
+			}, 
+			false, 
+			["encrypt", "decrypt"]
+		)
+		.then(function(key){
+			return crypto.subtle.decrypt(
+				{
+					name: "AES-GCM", 
+					iv: iv
+				}, 
+				key, 
+				encrypted_data
+			)
+			.then(function(result){
+				data = new Uint8Array(result);
+				return data;
+			})
+			.catch(function(e){
+				console.log(e);
+			});
+    	})
+    	.catch(function(e){
+    		console.log(e);
+    	});
+    })
+    .catch(function(e){
+    	console.log(e);
+    });
+}
+
 function IV(email, ctr){
 	return ecc.sjcl.hash.sha256.hash(email + String(ctr));
 }
@@ -46,7 +187,6 @@ function encryptFile(email, name, key){
 	var kprime = ecc.sjcl.misc.pbkdf2(key.x.toLocaleString() + email + r_fid, r_fid);
 	console.log(kprime);
 	var kprime_hex = ecc.sjcl.codec.hex.fromBits(kprime);
-
 	var name_buf = ecc.sjcl.codec.hex.toBits(toHex(name));
 	var prp = new ecc.sjcl.cipher.aes(kprime);
 	var encrypt_filename = ecc.sjcl.mode.gcm.encrypt(prp, name_buf, ecc.sjcl.hash.sha256.hash(r_fid));
@@ -61,18 +201,52 @@ function encryptFile(email, name, key){
 }
 
 function decryptFile(email, key, ix){
+	key = Point(key);
+	ix = ix.replace("file:" , "");
+	console.log(email + " " + key +  " " + ix);
 	var r_fid =  toByteArray(ix.slice(0,24)).join();
 	var encrypt_filename = ix.slice(24,);
 	var kprime = ecc.sjcl.misc.pbkdf2(key.x.toLocaleString() + email + r_fid, r_fid);
-	var kprime_hex = ecc.sjcl.codec.hex.fromBits(kprime);
+	//var kprime_hex = ecc.sjcl.codec.hex.fromBits(kprime);
 
 	var enc_name_buf = ecc.sjcl.codec.hex.toBits(encrypt_filename);
+	var prp = new ecc.sjcl.cipher.aes(kprime);
 	var decrypt_filename = ecc.sjcl.mode.gcm.decrypt(prp, enc_name_buf, ecc.sjcl.hash.sha256.hash(r_fid));
-	var dec_hex = ecc.sjcl.codec.hex.fromBits(decrypt_filename);
+	console.log(ecc.sjcl.codec.hex.fromBits(decrypt_filename));
+	var name = toStr(ecc.sjcl.codec.hex.fromBits(decrypt_filename));
+	return name;
 }
 
-function fileFromIX(){
+function saveFile(file1, file2, filename, actual_filename, email, key){
+	var decrypted_data = "";
+	var file = new Uint8Array(file1.length);
+	console.log(file1);
+	console.log(file2);
+	file1.forEach(function XORArrayElements(element, index, array) {
+  		file[index] = file2[index] ^ element;
+	});
 
+	key = Point(key);
+	var ix = filename.replace("file:" , "");
+	console.log(email + " " + key +  " " + ix);
+	var iv =  new Uint8Array(toByteArray(ix.slice(0,24)));
+	console.log(iv);
+	var r_fid = iv.join();
+
+	var kprime = ecc.sjcl.misc.pbkdf2(key.x.toLocaleString() + email + r_fid, r_fid);
+	var kprime_hex = ecc.sjcl.codec.hex.fromBits(kprime);
+
+	decryptData(file, kprime_hex, iv)
+	.then((dec) => {
+		decrypted_data = dec;
+	})
+	.then(function(){
+		const blob = new Blob( [decrypted_data.buffer] , {type : 'application/octet-stream'});
+		const objectURL = URL.createObjectURL( blob );
+		link.href = objectURL ;
+		link.download = actual_filename ;
+		link.click()
+	});
 }
 
 function change(data){
@@ -176,7 +350,7 @@ function outsourced(data){
 				/*Addition for file Encryption*/
 				if(ix.indexOf(email) == 0){
 					var filename = ix.split(',')[1];
-					ix = encryptFile(email, filename, K);
+					ix = "file:" + encryptFile(email, filename, K);
 					//Necessary evil to handle the fucking promises
 					//Fucking tired of this shit.
 					console.log(ix);
@@ -321,6 +495,8 @@ function retrieveState2(data){
 			}
 		}
 	});
+	console.log("This is the result data");
+	console.log(result); 
 	return result;
 }
 
@@ -368,139 +544,6 @@ function reset(data){
 	}
 }
 
-function convertStringToArrayBufferView(str) {
-    var bytes = new Uint8Array(str.length);
-    for (var i = 0; i < str.length; i++) {
-        bytes[i] = str.charCodeAt(i);
-    }
-    return bytes;
-}
-
-function appendArray(buffer1, buffer2) {
-  
-  var tmp = new Uint8Array(buffer1.length + buffer2.length);
-  tmp.set(new Uint8Array(buffer1), 0);
-  tmp.set(new Uint8Array(buffer2), buffer1.length);
-  return tmp;
-
-}
-
-function toHexString(byteArray) {
-	return Array.prototype.map.call(byteArray, function(byte) {
-	  return ('0' + (byte & 0xFF).toString(16)).slice(-2);
-	}).join('');
-}
-
-function toByteArray(hexString) {
-	var result = [];
-	for (var i = 0; i < hexString.length; i += 2) {
-	  result.push(parseInt(hexString.substr(i, 2), 16));
-	}
-	return result;
-}
-
-/*
-File Encryption requires three parameters
-	file : The bit string
-	password : key derived
-	iv string : r_fid
-*/
-
-function encryptData(file, password, iv){
-   	var encrypted_data = ""; 
-	return crypto.subtle.digest(
-   		{
-   			name: "SHA-256"
-   		}, 
-   		convertStringToArrayBufferView(password)
-   	)
-   	.then(function(result){
-		return window.crypto.subtle.importKey(
-			"raw", 
-			result, 
-			{
-				name: "AES-GCM"
-			}, 
-			false, 
-			["encrypt", "decrypt"]
-		)
-		.then(function(key){
-			return crypto.subtle.encrypt(
-				{
-					name: "AES-GCM", 
-					iv: iv
-				}, 
-				key, 
-				file
-			)
-			.then(function(result){
-				encrypted_data = new Uint8Array(result);
-				return encrypted_data;
-			})
-			.catch(function(e){
-				console.log(e);
-			});
-    	})
-    	.catch(function(e){
-    		console.log(e);
-    	});
-    })
-    .catch(function(e){
-    	console.log(e);
-    });
-}
-
-/*
-File Decryption requires three parameters
-	encrypted_data : The bit string
-	password : key derived
-	iv string : r_fid
-*/
-
-function decryptFile(encrypted_data, password, iv){
-
-	return crypto.subtle.digest(
-   		{
-   			name: "SHA-256"
-   		}, 
-   		convertStringToArrayBufferView(password)
-   	)
-   	.then(function(result){
-		return window.crypto.subtle.importKey(
-			"raw", 
-			result, 
-			{
-				name: "AES-GCM"
-			}, 
-			false, 
-			["encrypt", "decrypt"]
-		)
-		.then(function(key){
-			return crypto.subtle.decrypt(
-				{
-					name: "AES-GCM", 
-					iv: iv
-				}, 
-				key, 
-				encrypted_data
-			)
-			.then(function(result){
-				data = new Uint8Array(result);
-				return data;
-			})
-			.catch(function(e){
-				console.log(e);
-			});
-    	})
-    	.catch(function(e){
-    		console.log(e);
-    	});
-    })
-    .catch(function(e){
-    	console.log(e);
-    });
-}
-
 function readFile(file, encrypt_filename, kprime, iv){
 	var reader = new FileReader();
 
@@ -540,3 +583,4 @@ function readFile(file, encrypt_filename, kprime, iv){
 	};
 	reader.readAsArrayBuffer(file);
 }
+

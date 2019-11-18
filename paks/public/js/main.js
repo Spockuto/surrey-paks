@@ -20,6 +20,9 @@ window.secondary = "localhost:8000"
 window.files = "";
 var re = /(?:\.([^.]+))?$/;
 
+const link = document.createElement( 'a' );
+link.style.display = 'none';
+
 $('#image').hide();
 $('#image1').hide();
 $('#image2').hide();
@@ -612,6 +615,39 @@ function waitForFileArray(){
     }
 }
 
+function retrieveFileArray(filename, actual_filename, email, key){
+	var file1 , file2;
+    var form = new FormData();
+    filename = filename.replace("file:" , "");
+	form.append('name', filename);
+	$.when(
+		$.ajax({
+                  url: "http://" + window.primary + "/protocol/download",
+                  type: 'POST',
+                  data: form,
+                  processData: false,
+                  contentType: false,
+                  success: function(data){
+                      //file1 = new Uint8Array($.map(data, function(e) { return e }));
+                      file1 = new Uint8Array(data.split(","));
+                }
+	    }),
+	    $.ajax({
+                  url: "http://" + window.secondary + "/protocol/download",
+                  type: 'POST',
+                  data: form,
+                  processData: false,
+                  contentType: false,
+                  success: function(data){
+                     //file2 = new Uint8Array($.map(data, function(e) { return e }));
+                      file2 = new Uint8Array(data.split(","));
+                }
+	    })
+	).then(function(){
+		saveFile(file1, file2, filename, actual_filename, email, key);
+	});
+}
+
 
 $("#outsource").submit(function (e) {
      
@@ -953,11 +989,14 @@ $("#retrieve").submit(function (e) {
                     console.log(final);
                     var tags = retrievedata.tag;
                     console.timeEnd('retrieveState2');
+                    console.log(final);
                     for(var propName in final) {
                         if(final.hasOwnProperty(propName)) {
                             var propValue = final[propName];
-                            if(propValue.split(",")[0] == email){
-                                var name = propValue.replace(email + "," , "");
+                            console.log(propValue);
+                            if(propValue.indexOf("file:") == 0){
+                                var name =  propValue;
+                                var file_name = decryptFile(email, result.k, name);
                                 if(finaldata.hasOwnProperty(name)){
                                     finaldata[name].push(tags);
                                     finaldata[name].lengths++;
@@ -966,7 +1005,7 @@ $("#retrieve").submit(function (e) {
                                 else{
                                     finaldata[name] = [tags];
                                     finaldata[name].lengths = 1;
-                                    finaldata[name].data = "<a href='http://" + window.primary +"/protocol/download?file=" + name +"'>" + name.substring(0,15) + ".." + re.exec(name)[1] + "</a>";
+                                    finaldata[name].data = "<a href='' onclick='retrieveFileArray('" + name + "','" + file_name + "','" + email + "','"  + result.k + "');return false;'>" + file_name.substring(0,15) + ".." + re.exec(file_name)[1] + "</a>";
                                 }
                             }
                             else{
