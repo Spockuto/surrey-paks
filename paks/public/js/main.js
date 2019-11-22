@@ -1005,7 +1005,12 @@ $("#retrieve").submit(function (e) {
                                 else{
                                     finaldata[name] = [tags];
                                     finaldata[name].lengths = 1;
-                                    finaldata[name].data = "<a href='' onclick=\"retrieveFileArray('" + name + "','" + file_name + "','" + email + "','"  + result.k + "');return false;\">" + file_name.substring(0,15) + ".." + re.exec(file_name)[1] + "</a>";
+                                    var given_name = "";
+                                    if(file_name.length < 12)
+                                        given_name = file_name;
+                                    else 
+                                        given_name = file_name.substring(0,12).replace(re.exec(file_name)[0], "") + ".." + re.exec(file_name)[0]   
+                                    finaldata[name].data = "<a href='' onclick=\"retrieveFileArray('" + name + "','" + file_name + "','" + email + "','"  + result.k + "');return false;\">" + given_name + "</a>";
                                 }
                             }
                             else{

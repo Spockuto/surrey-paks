@@ -89,7 +89,7 @@ app.use('/users', users);
 app.use('/protocol', protocol);
 
 
-// Set Port
+// Need to be configured for every new auxillary deployment
 app.set('port', (process.env.PORT || 8000));
 
 app.listen(app.get('port'), function(){
