@@ -1010,7 +1010,7 @@ $("#retrieve").submit(function (e) {
                                         given_name = file_name;
                                     else 
                                         given_name = file_name.substring(0,12).replace(re.exec(file_name)[0], "") + ".." + re.exec(file_name)[0]   
-                                    finaldata[name].data = "<a href='' onclick=\"retrieveFileArray('" + name + "','" + file_name + "','" + email + "','"  + result.k + "');return false;\">" + given_name + "</a>";
+                                    finaldata[name].data = "<a href='' title='" + file_name + "' onclick=\"retrieveFileArray('" + name + "','" + file_name + "','" + email + "','"  + result.k + "');return false;\">" + given_name + "</a>";
                                 }
                             }
                             else{
