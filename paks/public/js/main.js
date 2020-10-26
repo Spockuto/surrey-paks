@@ -13,8 +13,8 @@ $.fn.allchange = function (callback) {
     };
 
 
-window.primary = "localhost:3000"
-window.secondary = "localhost:8000"
+window.primary = "10.64.31.217:3000"
+window.secondary = "10.64.31.217:8000"
 //window.primary =  "eec95e52.ngrok.io"
 //window.secondary = "47267495.ngrok.io"
 window.files = "";
@@ -644,7 +644,7 @@ function retrieveFileArray(filename, actual_filename, email, key){
                 }
 	    })
 	).then(function(){
-		saveFile(file1, file2, filename, actual_filename, email, key);
+        saveFile(file1, file2, filename, actual_filename, email, key);
 	});
 }
 

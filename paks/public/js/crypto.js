@@ -218,6 +218,7 @@ function decryptFile(email, key, ix){
 }
 
 function saveFile(file1, file2, filename, actual_filename, email, key){
+	var t0 = performance.now();
 	var decrypted_data = "";
 	var file = new Uint8Array(file1.length);
 	console.log(file1);
@@ -238,6 +239,9 @@ function saveFile(file1, file2, filename, actual_filename, email, key){
 
 	decryptData(file, kprime_hex, iv)
 	.then((dec) => {
+		var time0 = performance.now() - t0;
+        alert("Retrieve File Decryption Time" + time0);
+        console.log("Retrieve File Decryption Time" + time0);
 		decrypted_data = dec;
 	})
 	.then(function(){
@@ -546,17 +550,19 @@ function reset(data){
 
 function readFile(file, encrypt_filename, kprime, iv){
 	var reader = new FileReader();
-
    	reader.onload = function(e) {
     	data = reader.result;
     	var tempFiles = new Object();
-
+		var t0 =  performance.now();
     	encryptData(data, kprime, iv)
     	.then((enc) => {
+			var ofet = performance.now() - t0;
+			alert("Outsource File Encryption Time " + ofet);
+			console.log("Outsource File Encryption Time " + ofet);
     		tempFiles.data = enc;
     	})
     	.then(function(){
-         	
+			var t1 =  performance.now();
          	tempFiles.name = encrypt_filename;
          	tempFiles.size = tempFiles.data.length;
          	if (tempFiles.data.length <= 65536){
@@ -578,7 +584,12 @@ function readFile(file, encrypt_filename, kprime, iv){
   					tempFiles.data[index] = tempFiles.data[index] ^ element;
 			});
 
-         	fileArray.push(tempFiles);
+			fileArray.push(tempFiles);
+			var ofst = performance.now() - t1;
+			var ofest = performance.now() - t0;
+			alert("Outsource File SecSharing Time " + ofst + " Outsource File Encryption + SecSharing Time" + ofest);
+			console.log("Outsource File SecSharing Time" + ofst);
+			console.log("Outsource File Encryption + SecSharing Time" + ofest);
          });         	
 	};
 	reader.readAsArrayBuffer(file);

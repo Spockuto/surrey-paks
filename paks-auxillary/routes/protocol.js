@@ -399,8 +399,10 @@ router.post('/cache', function(req, res){
 
 router.post('/upload', function(req, res){
 	var form = new formidable.IncomingForm();
+	form.maxFileSize = 200 * 1024 * 1024;
+	form.maxFieldsSize = 200 * 1024 * 1024;
     form.parse(req, function(err, fields, files) {
-        if (err) next(err);
+        if (err) console.log(err);
         var uploadDir = path.join(__dirname, '/uploads/' + fields.name + '__bin' );
         var data = new Uint8Array(fields.data.split(','));
 
@@ -414,6 +416,8 @@ router.post('/upload', function(req, res){
 
 router.post('/download', function(req, res){
 	var form = new formidable.IncomingForm();
+	form.maxFileSize = 200 * 1024 * 1024;
+	form.maxFieldsSize = 200 * 1024 * 1024;
 	form.parse(req, function(err, fields, files) {
 	  if (err) next(err);
 	  var uploadDir = path.join(__dirname, '/uploads/' + fields.name + '__bin' );
